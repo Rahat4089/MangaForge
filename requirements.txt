@@ -3,7 +3,6 @@
 
 # Telegram bot runtime
 pyrofork       # Pyrogram fork for Telegram bots
-TgCrypto       # Faster Telegram encryption backend
 
 # Core dependencies
 PyYAML          # Configuration file support
