@@ -110,7 +110,28 @@ class Config:
                 'image_quality': 95,
             },
             'providers': {
-                'enabled': ['mock'],  # Only mock for Phase 1
+                'enabled': [
+                    'weebcentral',
+                    'mangabuddy',
+                    'asuracomic',
+                    'webtoons',
+                    'toonily',
+                    'vymanga',
+                    'kaliscan',
+                    'manhuascan',
+                    'comix',
+                    'mangaball',
+                    'weebdex',
+                    'mangapill',
+                    'kunmanga',
+                    'harmonyscan',
+                    'mangacloud',
+                    'mangafire',
+                    'mangakatana',
+                    'mangataro',
+                    'atsu',
+                    'mock',
+                ],
                 'rate_limits': {
                     'default': 1.0,
                 }
@@ -128,7 +149,11 @@ class Config:
             'logging': {
                 'level': 'INFO',
                 'file': str(Path.cwd() / 'logs' / 'mangaforge.log'),
-            }
+            },
+            'bot': {
+                'max_upload_files': 3,
+                'max_upload_size_mb': 45,
+            },
         }
 
     def _merge_configs(self, defaults: Dict[str, Any], user_config: Dict[str, Any]) -> Dict[str, Any]:

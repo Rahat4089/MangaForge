@@ -1,249 +1,134 @@
 #!/usr/bin/env python3
 """
-Test script for MangaForge Phase 2 CLI system.
+Bot runtime smoke tests for MangaForge.
 
-This script tests the CLI components to ensure they can be imported
-and initialized correctly. Full interactive testing requires manual
-user interaction.
+This keeps the historical filename but now validates the Pyrofork bot stack.
 """
+
 import logging
+import os
 import sys
 from pathlib import Path
 
-# Add the current directory to Python path for imports
 sys.path.insert(0, str(Path(__file__).parent))
 
-# Set up logging
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
 )
-
 logger = logging.getLogger(__name__)
 
 
-def test_cli_imports():
-    """Test that all CLI components can be imported."""
-    logger.info("Testing CLI imports...")
-
+def test_main_imports():
+    """Main entry and dependency checker should import."""
     try:
-        # Test main entry point
-        from main import main, check_dependencies
+        from main import check_dependencies, main
+
+        _ = check_dependencies
+        _ = main
         logger.info("✓ main.py imports successful")
-
-        # Test CLI app
-        from cli.app import MangaForgeApp
-        logger.info("✓ cli.app imports successful")
-
-        # Test CLI components
-        from cli.tables import display_search_results, display_manga_info_card
-        logger.info("✓ cli.tables imports successful")
-
-        from cli.menus import select_chapters, select_download_format
-        logger.info("✓ cli.menus imports successful")
-
-        from cli.prompts import prompt_manga_title, prompt_manga_url
-        logger.info("✓ cli.prompts imports successful")
-
         return True
-
-    except Exception as e:
-        logger.error(f"CLI imports test failed: {e}")
-        import traceback
-        traceback.print_exc()
+    except Exception as exc:
+        logger.error("Main imports test failed: %s", exc)
         return False
 
 
-def test_cli_initialization():
-    """Test that CLI components can be initialized."""
-    logger.info("Testing CLI initialization...")
-
+def test_bot_config_non_strict():
+    """Non-strict env config should work for local smoke tests."""
     try:
-        # Test MangaForgeApp initialization
-        from cli.app import MangaForgeApp
+        from bot.app import BotRuntimeConfig
 
-        app = MangaForgeApp()
-        logger.info("✓ MangaForgeApp initialized successfully")
+        # Ensure strict mode is not required for smoke tests.
+        os.environ.pop("API_ID", None)
+        os.environ.pop("API_HASH", None)
+        os.environ.pop("BOT_TOKEN", None)
+        cfg = BotRuntimeConfig.from_env(strict=False)
 
-        # Check that components are properly initialized
-        assert app.config is not None
-        assert app.provider_manager is not None
-        assert app.downloader is not None
-        assert app.converter is not None
-
-        logger.info("✓ All CLI components initialized correctly")
-
+        assert isinstance(cfg.api_id, int)
+        assert cfg.api_hash
+        assert cfg.bot_token
+        logger.info("✓ BotRuntimeConfig.from_env(strict=False) works")
         return True
-
-    except Exception as e:
-        logger.error(f"CLI initialization test failed: {e}")
-        import traceback
-        traceback.print_exc()
+    except Exception as exc:
+        logger.error("Bot config test failed: %s", exc)
         return False
 
 
-def test_cli_dependencies():
-    """Test that CLI dependencies are available."""
-    logger.info("Testing CLI dependencies...")
-
+def test_bot_initialization():
+    """Bot object should initialize without connecting."""
     try:
-        # Test Rich components
-        from rich.console import Console
-        from rich.table import Table
-        from rich.panel import Panel
-        from rich.progress import Progress
+        from bot.app import BotRuntimeConfig, MangaForgeBot
 
-        console = Console()
-        table = Table()
-        panel = Panel("test")
-        progress = Progress()
+        runtime = BotRuntimeConfig.from_env(strict=False)
+        bot = MangaForgeBot(runtime_config=runtime)
 
-        logger.info("✓ Rich components available")
-
-        # Test Typer
-        import typer
-        logger.info("✓ Typer available")
-
-        # Test Questionary
-        import questionary
-        logger.info("✓ Questionary available")
-
+        assert bot.config is not None
+        assert bot.provider_manager is not None
+        logger.info("✓ MangaForgeBot initialized successfully")
         return True
-
-    except Exception as e:
-        logger.error(f"CLI dependencies test failed: {e}")
-        import traceback
-        traceback.print_exc()
+    except Exception as exc:
+        logger.error("Bot initialization test failed: %s", exc)
         return False
 
 
-def test_provider_integration():
-    """Test that CLI integrates properly with providers."""
-    logger.info("Testing CLI provider integration...")
-
+def test_mangakakalot_removed():
+    """MangaKakalot should not be available anymore."""
     try:
-        from cli.app import MangaForgeApp
+        from core.provider_manager import ProviderManager
+        from core.config import Config
 
-        app = MangaForgeApp()
-
-        # Test provider manager integration
-        providers = app.provider_manager.list_providers()
-        logger.info(f"✓ Provider manager loaded {len(providers)} providers: {providers}")
-
-        # Test that mock provider is available
-        if 'mock' in providers:
-            mock_provider = app.provider_manager.get_provider('mock')
-            logger.info(f"✓ Mock provider available: {mock_provider}")
-
-            # Test basic provider functionality
-            results, has_next = mock_provider.search("test", page=1)
-            logger.info(f"✓ Mock provider search works: {len(results)} results")
-
-            return True
-        else:
-            logger.error("Mock provider not found!")
+        manager = ProviderManager()
+        providers = manager.list_providers()
+        if "mangakakalot" in providers:
+            logger.error("mangakakalot is still loaded in provider manager!")
             return False
 
-    except Exception as e:
-        logger.error(f"Provider integration test failed: {e}")
-        import traceback
-        traceback.print_exc()
-        return False
+        cfg = Config()
+        if "mangakakalot" in cfg.enabled_providers:
+            logger.error("mangakakalot is still present in enabled providers config!")
+            return False
 
-
-def test_config_integration():
-    """Test that CLI integrates properly with configuration."""
-    logger.info("Testing CLI config integration...")
-
-    try:
-        from cli.app import MangaForgeApp
-
-        app = MangaForgeApp()
-
-        # Test config access
-        download_dir = app.config.download_dir
-        max_workers = app.config.max_chapter_workers
-        default_format = app.config.default_format
-
-        logger.info("✓ Config integration successful")
-        logger.info(f"  Download dir: {download_dir}")
-        logger.info(f"  Chapter workers: {max_workers}")
-        logger.info(f"  Default format: {default_format}")
-
+        logger.info("✓ MangaKakalot removed from providers/config")
         return True
-
-    except Exception as e:
-        logger.error(f"Config integration test failed: {e}")
-        import traceback
-        traceback.print_exc()
+    except Exception as exc:
+        logger.error("MangaKakalot removal test failed: %s", exc)
         return False
 
 
 def main():
-    """Run all CLI tests."""
-    logger.info("Starting MangaForge Phase 2 CLI system tests...")
+    logger.info("Starting MangaForge bot system tests...")
 
     tests = [
-        ("CLI Dependencies", test_cli_dependencies),
-        ("CLI Imports", test_cli_imports),
-        ("CLI Initialization", test_cli_initialization),
-        ("Provider Integration", test_provider_integration),
-        ("Config Integration", test_config_integration),
+        ("Main Imports", test_main_imports),
+        ("Bot Config", test_bot_config_non_strict),
+        ("Bot Initialization", test_bot_initialization),
+        ("MangaKakalot Removed", test_mangakakalot_removed),
     ]
-
-    results = []
-
-    for test_name, test_func in tests:
-        logger.info(f"\n{'='*50}")
-        logger.info(f"Running test: {test_name}")
-        logger.info(f"{'='*50}")
-
-        try:
-            success = test_func()
-            results.append((test_name, success))
-
-            if success:
-                logger.info(f"✓ {test_name} PASSED")
-            else:
-                logger.error(f"✗ {test_name} FAILED")
-
-        except Exception as e:
-            logger.error(f"✗ {test_name} FAILED with exception: {e}")
-            results.append((test_name, False))
-
-    # Summary
-    logger.info(f"\n{'='*60}")
-    logger.info("CLI TEST SUMMARY")
-    logger.info(f"{'='*60}")
 
     passed = 0
     failed = 0
-
-    for test_name, success in results:
-        status = "PASSED" if success else "FAILED"
-        logger.info(f"{test_name:25} : {status}")
-
-        if success:
+    for name, fn in tests:
+        logger.info("\n%s", "=" * 52)
+        logger.info("Running test: %s", name)
+        logger.info("%s", "=" * 52)
+        ok = fn()
+        if ok:
+            logger.info("✓ %s PASSED", name)
             passed += 1
         else:
+            logger.error("✗ %s FAILED", name)
             failed += 1
 
-    logger.info(f"{'='*60}")
-    logger.info(f"Total: {len(results)} tests")
-    logger.info(f"Passed: {passed}")
-    logger.info(f"Failed: {failed}")
+    logger.info("\n%s", "=" * 60)
+    logger.info("BOT TEST SUMMARY")
+    logger.info("%s", "=" * 60)
+    logger.info("Total: %d", len(tests))
+    logger.info("Passed: %d", passed)
+    logger.info("Failed: %d", failed)
 
-    if failed == 0:
-        logger.info("🎉 All CLI tests passed!")
-        logger.info("✅ CLI system is ready for interactive testing")
-        logger.info("\n💡 To test interactively:")
-        logger.info("   python main.py")
-        return 0
-    else:
-        logger.error("❌ Some CLI tests failed.")
-        return 1
+    return 0 if failed == 0 else 1
 
 
 if __name__ == "__main__":
-    exit_code = main()
-    sys.exit(exit_code)
+    raise SystemExit(main())
+

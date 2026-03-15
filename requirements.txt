@@ -1,6 +1,10 @@
 # MangaForge Core Dependencies
 # Install with: pip install -r requirements.txt
 
+# Telegram bot runtime
+pyrofork       # Pyrogram fork for Telegram bots
+TgCrypto       # Faster Telegram encryption backend
+
 # Core dependencies
 PyYAML          # Configuration file support
 httpx        # Modern HTTP client
@@ -24,7 +28,6 @@ selenium    # Browser automation
 playwright  # Modern browser automation (required for MangaPark)
 
 # Cloudflare bypass for protected sites
-cloudscraper  # Cloudflare protection bypass (required for MangaBuddy)
+cloudscraper  # Cloudflare protection bypass (required for MangaBuddy/KunManga)
 ai-cloudscraper
-curl-cffi     # Cloudflare bypass via TLS fingerprinting (required for MangaKakalot)
-requests      # FlareSolverr communication (required for MangaKakalot)
+requests      # FlareSolverr communication (required for KunManga)

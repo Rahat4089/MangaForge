@@ -140,7 +140,7 @@ class KaliscanProvider(BaseProvider):
         chapter_url = self._normalise_chapter_url(chapter_id)
         logger.debug("Fetching Kaliscan chapter images using Playwright for %s", chapter_url)
 
-        # Use the same approach as MangaKakalot for handling asyncio event loops
+        # Handle environments where an asyncio loop may already be active
         try:
             loop = asyncio.get_event_loop()
             if loop.is_running():

@@ -2,6 +2,9 @@ advanced:
   create_subdirectories: true
   preserve_metadata: true
   skip_existing: true
+bot:
+  max_upload_files: 3
+  max_upload_size_mb: 45
 download:
   directory: ./downloads
   max_chapter_workers: 3
@@ -25,7 +28,6 @@ providers:
   - asuracomic
   - webtoons
   - toonily
-  - mangakakalot
   - vymanga
   - kaliscan
   - manhuascan
